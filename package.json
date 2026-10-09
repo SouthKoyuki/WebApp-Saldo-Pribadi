@@ -1,0 +1,25 @@
+{
+  "name": "aplikasi-saldo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/share": "^7.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}

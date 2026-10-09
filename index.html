@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#176b55" />
+    <meta name="description" content="Pencatat saldo offline. Transaksi tersimpan di perangkat." />
+    <title>Aplikasi Saldo</title>
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">S</span><div><h1>Aplikasi Saldo</h1><p>Pencatatan keuangan pribadi</p></div></div>
+        <span class="offline-pill"><span class="status-dot"></span> Lokal</span>
+      </header>
+
+      <main class="page-shell">
+        <nav class="tabs" aria-label="Navigasi utama">
+          <button class="tab active" data-page="dashboard">Ringkasan</button>
+          <button class="tab" data-page="history">Riwayat</button>
+          <button class="tab" data-page="settings">Pengaturan</button>
+        </nav>
+
+        <section id="page-dashboard" class="page active">
+          <div class="balance-card">
+            <div class="balance-label">Saldo saat ini <span class="local-tag">● Tersimpan di perangkat</span></div>
+            <div id="current-balance" class="balance-value">Rp0</div>
+            <div class="balance-foot">Dihitung dari saldo awal dan semua transaksi</div>
+          </div>
+          <div class="summary-grid">
+            <article class="summary-card income-card"><div class="summary-icon">↙</div><p>Total pemasukan</p><strong id="total-income">Rp0</strong></article>
+            <article class="summary-card expense-card"><div class="summary-icon">↗</div><p>Total pengeluaran</p><strong id="total-expense">Rp0</strong></article>
+          </div>
+          <div class="quick-actions">
+            <button class="primary-action" id="add-income"><span>＋</span> Tambah pemasukan</button>
+            <button class="secondary-action" id="add-expense"><span>－</span> Tambah pengeluaran</button>
+          </div>
+          <section class="panel">
+            <div class="section-heading"><div><h2>Transaksi terbaru</h2><p>Maksimal lima transaksi terakhir</p></div><button class="text-button" data-go="history">Lihat semua <span>→</span></button></div>
+            <div id="recent-list" class="transaction-list"></div>
+          </section>
+        </section>
+
+        <section id="page-history" class="page">
+          <div class="page-heading"><div><h2>Riwayat transaksi</h2><p>Cari dan kelola semua catatan transaksi.</p></div><button id="history-add" class="small-primary">＋ Tambah</button></div>
+          <div class="filters panel">
+            <label class="field"><span>Cari keterangan</span><input id="search-input" type="search" placeholder="Contoh: belanja bulanan" /></label>
+            <div class="filter-row">
+              <label class="field"><span>Jenis transaksi</span><select id="type-filter"><option value="all">Semua jenis</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></label>
+              <label class="field"><span>Dari tanggal</span><input id="date-from" type="date" /></label>
+              <label class="field"><span>Sampai tanggal</span><input id="date-to" type="date" /></label>
+            </div>
+            <button id="clear-filters" class="text-button">Bersihkan filter</button>
+          </div>
+          <section class="panel"><div class="section-heading"><div><h2>Semua transaksi</h2><p id="history-count">0 transaksi</p></div></div><div id="history-list" class="transaction-list"></div></section>
+        </section>
+
+        <section id="page-settings" class="page">
+          <div class="page-heading"><div><h2>Pengaturan</h2><p>Kelola saldo awal dan cadangan data.</p></div></div>
+          <section class="panel settings-panel">
+            <div class="section-heading"><div><h2>Saldo awal</h2><p>Nilai awal sebelum transaksi dicatat.</p></div></div>
+            <form id="opening-balance-form" class="settings-form"><label class="field"><span>Saldo awal (Rupiah)</span><input id="opening-balance-input" type="number" min="0" step="1" inputmode="numeric" required /></label><button class="primary-action" type="submit">Simpan saldo awal</button></form>
+          </section>
+          <section class="panel settings-panel">
+            <div class="section-heading"><div><h2>Backup dan pemulihan</h2><p>File disimpan atau dipilih olehmu. Tidak ada data yang dikirim ke server.</p></div></div>
+            <div class="backup-actions"><button id="export-json" class="secondary-action">↓ Ekspor backup JSON</button><button id="import-json" class="secondary-action">↑ Impor backup JSON</button><input id="import-file" type="file" accept="application/json,.json" hidden /><button id="export-csv" class="secondary-action">▤ Ekspor CSV untuk Excel</button></div>
+            <div class="notice"><strong>Catatan penting</strong><p>Impor JSON akan mengganti seluruh data lokal saat ini. Buat backup terlebih dahulu jika data lama masih diperlukan.</p></div>
+          </section>
+          <section class="panel about-panel"><h2>Tentang aplikasi</h2><p>Versi 1.0.0 · Offline-first · Database lokal</p><p class="muted">Data di instalasi ini terpisah dari perangkat lain. Aplikasi tidak membutuhkan akun, hosting, atau sinkronisasi.</p></section>
+        </section>
+      </main>
+      <footer class="app-footer">Aplikasi Saldo <span>•</span> Data tersimpan secara lokal</footer>
+    </div>
+
+    <dialog id="transaction-dialog" class="transaction-dialog">
+      <form id="transaction-form" method="dialog">
+        <div class="dialog-heading"><div><span id="dialog-eyebrow" class="eyebrow">TRANSAKSI BARU</span><h2 id="dialog-title">Tambah pemasukan</h2></div><button type="button" id="close-dialog" class="icon-button" aria-label="Tutup">×</button></div>
+        <input id="transaction-id" type="hidden" />
+        <div class="type-choice"><button type="button" data-choice="income" class="choice-button selected">＋ Pemasukan</button><button type="button" data-choice="expense" class="choice-button">－ Pengeluaran</button></div>
+        <label class="field"><span>Nominal (Rupiah)</span><div class="amount-input"><span>Rp</span><input id="amount-input" type="number" min="1" step="1" inputmode="numeric" placeholder="0" required /></div></label>
+        <label class="field"><span>Keterangan</span><input id="description-input" type="text" maxlength="200" placeholder="Contoh: Gaji bulanan" required /></label>
+        <label class="field"><span>Tanggal transaksi</span><input id="transaction-date-input" type="date" required /></label>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button type="button" id="cancel-dialog" class="secondary-action">Batal</button><button type="submit" class="primary-action">Simpan transaksi</button></div>
+      </form>
+    </dialog>
+    <dialog id="detail-dialog" class="transaction-dialog detail-dialog"><div class="dialog-heading"><div><span class="eyebrow">DETAIL TRANSAKSI</span><h2>Rincian transaksi</h2></div><button type="button" id="close-detail" class="icon-button" aria-label="Tutup">×</button></div><div id="detail-content"></div><div class="dialog-actions"><button type="button" id="delete-transaction" class="danger-button">Hapus</button><button type="button" id="edit-transaction" class="primary-action">Edit transaksi</button></div></dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
