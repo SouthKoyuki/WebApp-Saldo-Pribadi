@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/aplikasi-saldo/',
+  base: '/WebApp-Saldo-Pribadi/',
 
   plugins: [
     VitePWA({
@@ -23,8 +23,8 @@ export default defineConfig({
         theme_color: '#176b55',
         background_color: '#f5f7f6',
         display: 'standalone',
-        start_url: '/aplikasi-saldo/',
-        scope: '/aplikasi-saldo/',
+        start_url: '/WebApp-Saldo-Pribadi/',
+        scope: '/WebApp-Saldo-Pribadi/',
 
         icons: [
           {
