@@ -1,3 +1,4 @@
+
 # Aplikasi Saldo
 
 Aplikasi pencatatan saldo offline berdasarkan PRD: TypeScript + Vite + IndexedDB + PWA, dengan opsi APK Android melalui Capacitor. Tidak ada backend, akun, hosting wajib, atau sinkronisasi transaksi.
@@ -94,3 +95,4 @@ capacitor.config.ts
 ## Catatan pengembangan
 
 Ini adalah fondasi MVP yang dapat dikembangkan. Sebelum distribusi produksi, uji build web dan APK pada perangkat target, termasuk mode pesawat, ekspor/impor, dan pemulihan setelah aplikasi ditutup.
+
