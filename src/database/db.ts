@@ -10,6 +10,14 @@ export interface TransactionRecord {
   updatedAt: string;
 }
 
+export interface BlacklistRecord {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSettings {
   key: 'settings';
   openingBalance: number;
@@ -38,6 +46,10 @@ function openDatabase(): Promise<IDBDatabase> {
         store.createIndex('type', 'type', { unique: false });
       }
       if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('blacklist')) {
+        const store = db.createObjectStore('blacklist', { keyPath: 'id' });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('Database tidak dapat dibuka.'));
@@ -74,16 +86,33 @@ export async function getTransactions(): Promise<TransactionRecord[]> {
   return (rows as TransactionRecord[]).sort((a, b) => b.transactionDate.localeCompare(a.transactionDate) || b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
 }
 
+export async function getBlacklists(): Promise<BlacklistRecord[]> {
+  const rows = await getStore('blacklist', 'readonly', (store) => store.getAll());
+  return (rows as BlacklistRecord[]).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+}
+
 export async function getTransaction(id: string): Promise<TransactionRecord | undefined> {
   return getStore('transactions', 'readonly', (store) => store.get(id)) as Promise<TransactionRecord | undefined>;
+}
+
+export async function getBlacklist(id: string): Promise<BlacklistRecord | undefined> {
+  return getStore('blacklist', 'readonly', (store) => store.get(id)) as Promise<BlacklistRecord | undefined>;
 }
 
 export async function saveTransaction(record: TransactionRecord): Promise<void> {
   await getStore('transactions', 'readwrite', (store) => store.put(record));
 }
 
+export async function saveBlacklist(record: BlacklistRecord): Promise<void> {
+  await getStore('blacklist', 'readwrite', (store) => store.put(record));
+}
+
 export async function removeTransaction(id: string): Promise<void> {
   await getStore('transactions', 'readwrite', (store) => store.delete(id));
+}
+
+export async function removeBlacklist(id: string): Promise<void> {
+  await getStore('blacklist', 'readwrite', (store) => store.delete(id));
 }
 
 export async function getOpeningBalance(): Promise<number> {

@@ -19,6 +19,7 @@
         <nav class="tabs" aria-label="Navigasi utama">
           <button class="tab active" data-page="dashboard">Ringkasan</button>
           <button class="tab" data-page="history">Riwayat</button>
+          <button class="tab" data-page="blacklist">Blacklist</button>
           <button class="tab" data-page="settings">Pengaturan</button>
         </nav>
 
@@ -56,6 +57,29 @@
           <section class="panel"><div class="section-heading"><div><h2>Semua transaksi</h2><p id="history-count">0 transaksi</p></div></div><div id="history-list" class="transaction-list"></div></section>
         </section>
 
+        <section id="page-blacklist" class="page">
+          <div class="page-heading"><div><h2>Blacklist</h2><p>Catatan khusus orang atau pihak tertentu.</p></div><button id="blacklist-add" class="small-primary">＋ Tambah</button></div>
+          <div class="filters panel">
+            <label class="field"><span>Cari nama atau deskripsi</span><input id="blacklist-search-input" type="search" placeholder="Contoh: Budi, catatan khusus..." /></label>
+            <button id="clear-blacklist-filters" class="text-button">Bersihkan pencarian</button>
+          </div>
+          <section class="panel">
+            <div class="section-heading"><div><h2>Daftar Blacklist</h2><p id="blacklist-count">0 catatan</p></div></div>
+            <div class="table-container">
+              <table class="blacklist-table">
+                <thead>
+                  <tr>
+                    <th>Nama</th>
+                    <th>Deskripsi / Informasi</th>
+                    <th class="action-col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="blacklist-list"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
         <section id="page-settings" class="page">
           <div class="page-heading"><div><h2>Pengaturan</h2><p>Kelola saldo awal dan cadangan data.</p></div></div>
           <section class="panel settings-panel">
@@ -86,6 +110,23 @@
       </form>
     </dialog>
     <dialog id="detail-dialog" class="transaction-dialog detail-dialog"><div class="dialog-heading"><div><span class="eyebrow">DETAIL TRANSAKSI</span><h2>Rincian transaksi</h2></div><button type="button" id="close-detail" class="icon-button" aria-label="Tutup">×</button></div><div id="detail-content"></div><div class="dialog-actions"><button type="button" id="delete-transaction" class="danger-button">Hapus</button><button type="button" id="edit-transaction" class="primary-action">Edit transaksi</button></div></dialog>
+
+    <dialog id="blacklist-dialog" class="transaction-dialog">
+      <form id="blacklist-form" method="dialog">
+        <div class="dialog-heading"><div><span id="blacklist-dialog-eyebrow" class="eyebrow">CATATAN BARU</span><h2 id="blacklist-dialog-title">Tambah Blacklist</h2></div><button type="button" id="close-blacklist-dialog" class="icon-button" aria-label="Tutup">×</button></div>
+        <input id="blacklist-id" type="hidden" />
+        <label class="field"><span>Nama</span><input id="blacklist-name-input" type="text" maxlength="50" placeholder="Contoh: Nama orang / pihak" required /></label>
+        <label class="field"><span>Deskripsi / Informasi</span><textarea id="blacklist-desc-input" maxlength="250" rows="4" placeholder="Tuliskan alasan atau catatan khusus..."></textarea></label>
+        <p id="blacklist-form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button type="button" id="cancel-blacklist-dialog" class="secondary-action">Batal</button><button type="submit" class="primary-action">Simpan</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="blacklist-delete-dialog" class="transaction-dialog">
+      <div class="dialog-heading"><div><span class="eyebrow">KONFIRMASI HAPUS</span><h2>Hapus Data Blacklist</h2></div><button type="button" id="close-delete-blacklist-dialog" class="icon-button" aria-label="Tutup">×</button></div>
+      <p id="delete-confirm-message" style="margin: 16px 0; font-size: 14px; line-height: 1.5; color: var(--muted);"></p>
+      <div class="dialog-actions"><button type="button" id="cancel-delete-blacklist" class="secondary-action">Batal</button><button type="button" id="confirm-delete-blacklist" class="danger-button">Hapus</button></div>
+    </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

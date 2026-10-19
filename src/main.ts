@@ -5,14 +5,20 @@ import {
   getOpeningBalance,
   getTransactions,
   getTransaction,
+  getBlacklists,
+  getBlacklist,
   removeTransaction,
+  removeBlacklist,
   saveTransaction,
+  saveBlacklist,
   setOpeningBalance,
   type TransactionRecord,
-  type TransactionType
+  type TransactionType,
+  type BlacklistRecord
 } from './database/db';
 import { createCsvExport, createJsonBackup, restoreJsonBackup } from './services/BackupService';
 import { createTransaction, getSummary, validateTransaction } from './services/TransactionService';
+import { createBlacklist, validateBlacklist } from './services/BlacklistService';
 import './style.css';
 
 const $ = <T extends HTMLElement>(selector: string): T => {
@@ -23,6 +29,7 @@ const $ = <T extends HTMLElement>(selector: string): T => {
 
 let selectedType: TransactionType = 'income';
 let selectedTransactionId: string | null = null;
+let selectedBlacklistId: string | null = null;
 let openingBalance = 0;
 let toastTimer: number | undefined;
 
@@ -51,6 +58,7 @@ function goToPage(page: string): void {
   document.querySelectorAll<HTMLElement>('.page').forEach((element) => element.classList.toggle('active', element.id === `page-${page}`));
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((element) => element.classList.toggle('active', element.dataset.page === page));
   if (page === 'history') void renderHistory();
+  if (page === 'blacklist') void renderBlacklist();
   if (page === 'settings') void renderSettings();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -105,6 +113,70 @@ async function renderHistory(): Promise<void> {
   $('#history-count').textContent = `${filtered.length} dari ${transactions.length} transaksi`;
   $('#history-list').innerHTML = filtered.length ? filtered.map((transaction) => transactionMarkup(transaction, true)).join('') : emptyState(transactions.length ? 'Transaksi tidak ditemukan' : 'Belum ada transaksi', transactions.length ? 'Coba ubah kata kunci atau filter tanggal.' : 'Transaksi yang kamu catat akan muncul di sini.');
   wireTransactionRows($('#history-list'));
+}
+
+function blacklistRowMarkup(record: BlacklistRecord): string {
+  return `<tr data-blacklist-row-id="${escapeHtml(record.id)}">
+    <td><strong>${escapeHtml(record.name)}</strong></td>
+    <td>${escapeHtml(record.description || '-')}</td>
+    <td>
+      <div class="action-buttons">
+        <button type="button" class="btn-edit" data-edit-blacklist="${escapeHtml(record.id)}">Edit</button>
+        <button type="button" class="btn-delete" data-delete-blacklist="${escapeHtml(record.id)}">Hapus</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+async function renderBlacklist(): Promise<void> {
+  const blacklists = await getBlacklists();
+  const search = ($('#blacklist-search-input') as HTMLInputElement).value.trim().toLocaleLowerCase('id-ID');
+  const filtered = blacklists.filter((item) => {
+    if (!search) return true;
+    return item.name.toLocaleLowerCase('id-ID').includes(search) || item.description.toLocaleLowerCase('id-ID').includes(search);
+  });
+  $('#blacklist-count').textContent = `${filtered.length} dari ${blacklists.length} catatan`;
+  const tbody = $('#blacklist-list');
+  if (filtered.length) {
+    tbody.innerHTML = filtered.map(blacklistRowMarkup).join('');
+  } else {
+    tbody.innerHTML = `<tr><td colspan="3" class="blacklist-empty">${blacklists.length ? 'Catatan blacklist tidak ditemukan.' : 'Belum ada data blacklist.'}</td></tr>`;
+  }
+  wireBlacklistActions(tbody);
+}
+
+function wireBlacklistActions(container: HTMLElement): void {
+  container.querySelectorAll<HTMLButtonElement>('[data-edit-blacklist]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.editBlacklist;
+      if (!id) return;
+      const record = await getBlacklist(id);
+      if (record) openBlacklistForm(record);
+    });
+  });
+  container.querySelectorAll<HTMLButtonElement>('[data-delete-blacklist]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.deleteBlacklist;
+      if (!id) return;
+      const record = await getBlacklist(id);
+      if (!record) return;
+      selectedBlacklistId = id;
+      $('#delete-confirm-message').textContent = `Apakah Anda yakin ingin menghapus "${record.name}" dari daftar blacklist? Tindakan ini tidak dapat dibatalkan.`;
+      ($('#blacklist-delete-dialog') as HTMLDialogElement).showModal();
+    });
+  });
+}
+
+function openBlacklistForm(record?: BlacklistRecord): void {
+  selectedBlacklistId = record?.id ?? null;
+  $('#blacklist-dialog-eyebrow').textContent = record ? 'UBAH BLACKLIST' : 'CATATAN BARU';
+  $('#blacklist-dialog-title').textContent = record ? 'Edit Blacklist' : 'Tambah Blacklist';
+  ($('#blacklist-id') as HTMLInputElement).value = record?.id ?? '';
+  ($('#blacklist-name-input') as HTMLInputElement).value = record?.name ?? '';
+  ($('#blacklist-desc-input') as HTMLTextAreaElement).value = record?.description ?? '';
+  $('#blacklist-form-error').textContent = '';
+  ($('#blacklist-dialog') as HTMLDialogElement).showModal();
+  window.setTimeout(() => $('#blacklist-name-input').focus(), 50);
 }
 
 async function renderSettings(): Promise<void> {
@@ -222,6 +294,46 @@ function wireEvents(): void {
     ($('#date-to') as HTMLInputElement).value = '';
     void renderHistory();
   });
+
+  // Blacklist events
+  $('#blacklist-add').addEventListener('click', () => openBlacklistForm());
+  $('#close-blacklist-dialog').addEventListener('click', () => ($('#blacklist-dialog') as HTMLDialogElement).close());
+  $('#cancel-blacklist-dialog').addEventListener('click', () => ($('#blacklist-dialog') as HTMLDialogElement).close());
+  $('#close-delete-blacklist-dialog').addEventListener('click', () => ($('#blacklist-delete-dialog') as HTMLDialogElement).close());
+  $('#cancel-delete-blacklist').addEventListener('click', () => ($('#blacklist-delete-dialog') as HTMLDialogElement).close());
+
+  $('#confirm-delete-blacklist').addEventListener('click', async () => {
+    if (!selectedBlacklistId) return;
+    await removeBlacklist(selectedBlacklistId);
+    ($('#blacklist-delete-dialog') as HTMLDialogElement).close();
+    selectedBlacklistId = null;
+    await renderBlacklist();
+    showToast('Data blacklist berhasil dihapus.');
+  });
+
+  $('#blacklist-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const name = ($('#blacklist-name-input') as HTMLInputElement).value;
+    const description = ($('#blacklist-desc-input') as HTMLTextAreaElement).value;
+    const error = validateBlacklist(name, description);
+    if (error) { $('#blacklist-form-error').textContent = error; return; }
+    try {
+      const existing = selectedBlacklistId ? await getBlacklist(selectedBlacklistId) : undefined;
+      const record = createBlacklist(name, description, existing);
+      await saveBlacklist(record);
+      ($('#blacklist-dialog') as HTMLDialogElement).close();
+      await renderBlacklist();
+      showToast(existing ? 'Data blacklist berhasil diperbarui.' : 'Data blacklist berhasil disimpan.');
+    } catch (errorValue) {
+      $('#blacklist-form-error').textContent = errorValue instanceof Error ? errorValue.message : 'Gagal menyimpan blacklist.';
+    }
+  });
+
+  $('#blacklist-search-input').addEventListener('input', () => void renderBlacklist());
+  $('#clear-blacklist-filters').addEventListener('click', () => {
+    ($('#blacklist-search-input') as HTMLInputElement).value = '';
+    void renderBlacklist();
+  });
   $('#opening-balance-form').addEventListener('submit', async (event) => {
     event.preventDefault();
     const amount = Number(($('#opening-balance-input') as HTMLInputElement).value);
@@ -263,6 +375,7 @@ async function refreshAll(): Promise<void> {
   openingBalance = await getOpeningBalance();
   await renderDashboard();
   if ($('#page-history').classList.contains('active')) await renderHistory();
+  if ($('#page-blacklist').classList.contains('active')) await renderBlacklist();
   if ($('#page-settings').classList.contains('active')) await renderSettings();
 }
 
